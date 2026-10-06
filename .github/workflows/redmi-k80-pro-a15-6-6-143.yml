@@ -1,4 +1,4 @@
-name: Redmi K80 Pro - BakaSU SUSFS + LZ4KD (6.6.143)
+name: Redmi K80 Pro - BakaSU SUSFS (6.6.143)
 
 on:
   workflow_dispatch:
@@ -11,8 +11,18 @@ permissions:
 
 jobs:
   build-redmi-k80-pro:
-    # 方案 2：在保守基线中仅启用 ZRAM/LZ4KD，避免叠加实验性补丁。
-    name: 6.6.143-android15-8 BakaSU SUSFS + LZ4KD
+    # 两个方案分别在独立 runner 编译，产物互不覆盖。
+    name: 6.6.143-android15-8 ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 方案 1：保守基线，不叠加内存压缩补丁。
+          - name: "方案 1 - BakaSU SUSFS"
+            use_zram: false
+          # 方案 2：仅在保守基线上启用 ZRAM/LZ4KD。
+          - name: "方案 2 - BakaSU SUSFS + LZ4KD"
+            use_zram: true
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
@@ -23,8 +33,8 @@ jobs:
       ksu_variant: BakaSU
       ksu_branch: main
       clean_build: false
-      # 启用 LZ4KD 压缩后端，改善内存紧张时的 ZRAM 交换性能。
-      use_zram: true
+      # 方案 2 启用 LZ4KD 压缩后端，改善内存紧张时的 ZRAM 交换性能。
+      use_zram: ${{ matrix.use_zram }}
       use_bbg: false
       use_rekernel: false
       cve_2026_43499_patch: true
