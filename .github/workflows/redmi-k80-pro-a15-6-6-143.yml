@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # The reusable build workflow declares these permissions; callers may only
+  # keep or reduce them, never elevate them.
+  contents: write
+  actions: write
 
 jobs:
   build-redmi-k80-pro:
