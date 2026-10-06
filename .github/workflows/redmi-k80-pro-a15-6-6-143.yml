@@ -1,0 +1,30 @@
+name: Redmi K80 Pro - BakaSU SUSFS (6.6.143)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-redmi-k80-pro:
+    name: 6.6.143-android15-8 BakaSU SUSFS
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: android15
+      kernel_version: "6.6"
+      sub_level: "143"
+      os_patch_level: lts
+      ksu_variant: BakaSU
+      ksu_branch: main
+      clean_build: false
+      use_zram: false
+      use_bbg: false
+      use_rekernel: false
+      cve_2026_43499_patch: true
+      enable_susfs: true
+      supp_op: false
+      droidspaces: "off"
+      droidspaces_ntsync: false
+      build_bypass: false
