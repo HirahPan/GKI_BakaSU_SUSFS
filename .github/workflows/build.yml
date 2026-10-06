@@ -51,6 +51,10 @@ on:
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
+      artifact_suffix:
+        required: false
+        type: string
+        default: ""
 
       # ==================== 功能开关 ====================
       clean_build:
@@ -1616,7 +1620,8 @@ jobs:
       - name: 创建 AnyKernel3 压缩包
         run: |
           cd $ANYKERNEL3
-          ZIP_NAME="${CONFIG}-${BUILD_VARIANT}-AnyKernel3.zip"
+          PACKAGE_SUFFIX="${{ inputs.artifact_suffix }}"
+          ZIP_NAME="${CONFIG}-${BUILD_VARIANT}${PACKAGE_SUFFIX:+-${PACKAGE_SUFFIX}}-AnyKernel3.zip"
           mv ../Image ./Image
           if [ "${{ inputs.build_bypass }}" = "true" ]; then
             if [ ! -f "../Bypass-Image" ]; then
@@ -1721,7 +1726,7 @@ jobs:
       - name: 上传构建产物
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ env.BUILD_VARIANT }}_kernel-${{ env.CONFIG }}
+          name: ${{ env.BUILD_VARIANT }}_kernel-${{ env.CONFIG }}${{ inputs.artifact_suffix && format('-{0}', inputs.artifact_suffix) || '' }}
           path: |
             *AnyKernel3.zip
 #            *.img
