@@ -1,0 +1,10 @@
+{
+  "fingerprint": "c9246641b9eee8b9986050e8bf1832f88da880c2:a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a:a669ea9178b4538fd7e701fee316c6531e5d6804:712c2cd5cdc1c35470b3142e46622c0a8decc7c4:144",
+  "kernel": "6.6.144",
+  "bakasu_sha": "c9246641b9eee8b9986050e8bf1832f88da880c2",
+  "susfs_sha": "a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a",
+  "manifest_sha": "a669ea9178b4538fd7e701fee316c6531e5d6804",
+  "common_sha": "712c2cd5cdc1c35470b3142e46622c0a8decc7c4",
+  "build_run": "https://github.com/HirahPan/GKI_BakaSU_SUSFS/actions/runs/37589902412",
+  "built_at": "2026-10-07T08:21:06Z"
+}
