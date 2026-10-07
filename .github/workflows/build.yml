@@ -55,6 +55,10 @@ on:
         required: false
         type: string
         default: ""
+      verify_image_version:
+        required: false
+        type: boolean
+        default: false
 
       # ==================== 功能开关 ====================
       clean_build:
@@ -1525,6 +1529,16 @@ jobs:
           fi
 
           cp "$SRC_DIR/Image" ./
+
+          if [ "${{ inputs.verify_image_version }}" = "true" ]; then
+            ACTUAL_VERSION=$(strings ./Image | grep -m1 '^Linux version ' || true)
+            EXPECTED_PREFIX="Linux version ${{ inputs.kernel_version }}.${{ inputs.sub_level }}-"
+            if [[ "$ACTUAL_VERSION" != "$EXPECTED_PREFIX"* ]]; then
+              echo "::error::Image 真实版本不匹配。期望前缀: $EXPECTED_PREFIX；实际: ${ACTUAL_VERSION:-未找到}"
+              exit 1
+            fi
+            echo "已验证 Image 真实版本: $ACTUAL_VERSION"
+          fi
 
       # ==================== 激活 Bypass 构建 ====================
       # Bypass 只放宽内核模块版本校验，普通 Image 始终保留为默认产物。

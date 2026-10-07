@@ -1,0 +1,44 @@
+name: Redmi K80 Pro - BakaSU SUSFS (6.6.118)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build-redmi-k80-pro:
+    # 当前原厂 boot.img 已验证为 6.6.118-android15-8。
+    name: 6.6.118-android15-8 ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "方案 1 - BakaSU SUSFS"
+            use_zram: false
+            artifact_suffix: baseline
+          - name: "方案 2 - BakaSU SUSFS + LZ4KD"
+            use_zram: true
+            artifact_suffix: lz4kd
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: android15
+      kernel_version: "6.6"
+      sub_level: "118"
+      os_patch_level: "2026-01"
+      ksu_variant: BakaSU
+      ksu_branch: main
+      artifact_suffix: ${{ matrix.artifact_suffix }}
+      verify_image_version: true
+      clean_build: false
+      use_zram: ${{ matrix.use_zram }}
+      use_bbg: false
+      use_rekernel: false
+      cve_2026_43499_patch: true
+      enable_susfs: true
+      supp_op: false
+      droidspaces: "off"
+      droidspaces_ntsync: false
+      build_bypass: false
