@@ -59,6 +59,10 @@ on:
         required: false
         type: boolean
         default: false
+      susfs_ref:
+        required: false
+        type: string
+        default: ""
 
       # ==================== 功能开关 ====================
       clean_build:
@@ -347,8 +351,14 @@ jobs:
               fi
             fi
 
+            if [ -n "${{ inputs.susfs_ref }}" ]; then
+              git -C susfs4ksu checkout --detach "${{ inputs.susfs_ref }}"
+            fi
+
             SUSFS_LATEST_COMMIT_DATE=$(git -C susfs4ksu log -1 --date=format:'%Y-%m-%d %H:%M:%S %z' --format='%cd')
+            SUSFS_ACTUAL_REF=$(git -C susfs4ksu rev-parse HEAD)
             echo "SUSFS_LATEST_COMMIT_DATE=$SUSFS_LATEST_COMMIT_DATE" >> $GITHUB_ENV
+            echo "SUSFS_ACTUAL_REF=$SUSFS_ACTUAL_REF" >> $GITHUB_ENV
             echo "SUSFS 仓库最新提交日期: $SUSFS_LATEST_COMMIT_DATE"
           fi
 

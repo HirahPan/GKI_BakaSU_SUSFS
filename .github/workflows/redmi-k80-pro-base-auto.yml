@@ -1,0 +1,132 @@
+name: Redmi K80 Pro 6.6 LTS Base - Upstream Rebuild
+
+on:
+  schedule:
+    # Avoid minute zero, where scheduled workflows are more likely to be delayed.
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: '即使上游未变化也重新构建基础版'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: redmi-k80-pro-base-auto
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      fingerprint: ${{ steps.check.outputs.fingerprint }}
+      sub_level: ${{ steps.check.outputs.sub_level }}
+      bakasu_sha: ${{ steps.check.outputs.bakasu_sha }}
+      susfs_sha: ${{ steps.check.outputs.susfs_sha }}
+      manifest_sha: ${{ steps.check.outputs.manifest_sha }}
+      common_sha: ${{ steps.check.outputs.common_sha }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_file=.github/state/redmi-k80-pro-a15-6.6-lts-base.json
+          bakasu_sha=$(git ls-remote https://github.com/Baka-SU/BakaSU.git refs/heads/main | awk '{print $1}')
+          susfs_sha=$(git ls-remote https://gitlab.com/simonpunk/susfs4ksu.git refs/heads/gki-android15-6.6 | awk '{print $1}')
+          manifest_sha=$(git ls-remote https://android.googlesource.com/kernel/manifest refs/heads/common-android15-6.6-lts | awk '{print $1}')
+          common_sha=$(git ls-remote https://android.googlesource.com/kernel/common refs/heads/android15-6.6-lts | awk '{print $1}')
+          makefile=$(curl -fsSL 'https://android.googlesource.com/kernel/common/+/android15-6.6-lts/Makefile?format=TEXT' | base64 --decode)
+          version=$(awk -F '= *' '$1 == "VERSION " { print $2 }' <<< "$makefile")
+          patchlevel=$(awk -F '= *' '$1 == "PATCHLEVEL " { print $2 }' <<< "$makefile")
+          sub_level=$(awk -F '= *' '$1 == "SUBLEVEL " { print $2 }' <<< "$makefile")
+
+          for value in "$bakasu_sha" "$susfs_sha" "$manifest_sha" "$common_sha"; do
+            [[ "$value" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::未能解析上游提交 SHA'; exit 1; }
+          done
+          [[ "$version.$patchlevel" == '6.6' && "$sub_level" =~ ^[0-9]+$ ]] || { echo "::error::未能从 LTS Makefile 解析 6.6.X: $version.$patchlevel.$sub_level"; exit 1; }
+
+          fingerprint="$bakasu_sha:$susfs_sha:$manifest_sha:$common_sha:$sub_level"
+          previous=''
+          if [ -f "$state_file" ]; then
+            previous=$(jq -r '.fingerprint // empty' "$state_file")
+          fi
+
+          if [ "$fingerprint" != "$previous" ]; then changed=true; else changed=false; fi
+          {
+            echo "changed=$changed"
+            echo "fingerprint=$fingerprint"
+            echo "sub_level=$sub_level"
+            echo "bakasu_sha=$bakasu_sha"
+            echo "susfs_sha=$susfs_sha"
+            echo "manifest_sha=$manifest_sha"
+            echo "common_sha=$common_sha"
+          } >> "$GITHUB_OUTPUT"
+
+  build-base:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.changed == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_rebuild)
+    name: 6.6.${{ needs.check-upstream.outputs.sub_level }}-android15-8 BakaSU SUSFS Base
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: android15
+      kernel_version: '6.6'
+      sub_level: ${{ needs.check-upstream.outputs.sub_level }}
+      os_patch_level: lts
+      ksu_variant: BakaSU
+      ksu_branch: ${{ needs.check-upstream.outputs.bakasu_sha }}
+      susfs_ref: ${{ needs.check-upstream.outputs.susfs_sha }}
+      artifact_suffix: base-auto
+      verify_image_version: true
+      clean_build: false
+      use_zram: false
+      use_bbg: false
+      use_rekernel: false
+      cve_2026_43499_patch: true
+      enable_susfs: true
+      supp_op: false
+      droidspaces: 'off'
+      droidspaces_ntsync: false
+      build_bypass: false
+
+  record-successful-build:
+    needs: [check-upstream, build-base]
+    if: needs.build-base.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 记录已构建上游指纹
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_file=.github/state/redmi-k80-pro-a15-6.6-lts-base.json
+          mkdir -p "$(dirname "$state_file")"
+          jq -n \
+            --arg fingerprint '${{ needs.check-upstream.outputs.fingerprint }}' \
+            --arg sub_level '${{ needs.check-upstream.outputs.sub_level }}' \
+            --arg bakasu_sha '${{ needs.check-upstream.outputs.bakasu_sha }}' \
+            --arg susfs_sha '${{ needs.check-upstream.outputs.susfs_sha }}' \
+            --arg manifest_sha '${{ needs.check-upstream.outputs.manifest_sha }}' \
+            --arg common_sha '${{ needs.check-upstream.outputs.common_sha }}' \
+            --arg build_run '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+            --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{fingerprint: $fingerprint, kernel: ("6.6." + $sub_level), bakasu_sha: $bakasu_sha, susfs_sha: $susfs_sha, manifest_sha: $manifest_sha, common_sha: $common_sha, build_run: $build_run, built_at: $built_at}' > "$state_file"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$state_file"
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore: record Redmi K80 Pro 6.6 LTS base build'
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
