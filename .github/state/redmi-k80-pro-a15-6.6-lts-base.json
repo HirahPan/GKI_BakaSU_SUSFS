@@ -1,10 +1,10 @@
 {
-  "fingerprint": "8450dd287ef6ee25ca2b6b858b43c9354c73060c:a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a:a669ea9178b4538fd7e701fee316c6531e5d6804:712c2cd5cdc1c35470b3142e46622c0a8decc7c4:144",
+  "fingerprint": "5b76b884c75f729a220bb317aa4a4fc78f0e0e9c:a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a:a669ea9178b4538fd7e701fee316c6531e5d6804:712c2cd5cdc1c35470b3142e46622c0a8decc7c4:144",
   "kernel": "6.6.144",
-  "bakasu_sha": "8450dd287ef6ee25ca2b6b858b43c9354c73060c",
+  "bakasu_sha": "5b76b884c75f729a220bb317aa4a4fc78f0e0e9c",
   "susfs_sha": "a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a",
   "manifest_sha": "a669ea9178b4538fd7e701fee316c6531e5d6804",
   "common_sha": "712c2cd5cdc1c35470b3142e46622c0a8decc7c4",
-  "build_run": "https://github.com/HirahPan/GKI_BakaSU_SUSFS/actions/runs/37816221643",
-  "built_at": "2026-10-08T17:53:29Z"
+  "build_run": "https://github.com/HirahPan/GKI_BakaSU_SUSFS/actions/runs/37935522096",
+  "built_at": "2026-10-09T13:46:22Z"
 }
