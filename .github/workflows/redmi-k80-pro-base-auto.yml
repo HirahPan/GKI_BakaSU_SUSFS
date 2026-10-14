@@ -103,7 +103,19 @@ jobs:
   build-base:
     needs: check-upstream
     if: needs.check-upstream.outputs.changed == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_rebuild)
-    name: 6.6.${{ needs.check-upstream.outputs.sub_level }}-android15-8 BakaSU SUSFS Base
+    name: 6.6.${{ needs.check-upstream.outputs.sub_level }}-android15-8 ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 方案 1：保守基线，不叠加 ZRAM/LZ4KD。
+          - name: '方案 1 - BakaSU SUSFS 基线'
+            use_zram: false
+            artifact_suffix: base-auto
+          # 方案 2：与方案 1 使用相同的上游 SHA，仅启用 ZRAM/LZ4KD。
+          - name: '方案 2 - BakaSU SUSFS + LZ4KD'
+            use_zram: true
+            artifact_suffix: lz4kd-auto
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
@@ -114,10 +126,10 @@ jobs:
       ksu_variant: BakaSU
       ksu_branch: ${{ needs.check-upstream.outputs.bakasu_sha }}
       susfs_ref: ${{ needs.check-upstream.outputs.susfs_sha }}
-      artifact_suffix: base-auto
+      artifact_suffix: ${{ matrix.artifact_suffix }}
       verify_image_version: true
       clean_build: false
-      use_zram: false
+      use_zram: ${{ matrix.use_zram }}
       use_bbg: false
       use_rekernel: false
       cve_2026_43499_patch: true
