@@ -1,16 +1,7 @@
-name: Redmi K80 Pro 6.6 LTS Base - Upstream Rebuild
+name: Redmi K80 Pro 6.6 LTS - Manual Build
 
 on:
-  schedule:
-    # Avoid minute zero, where scheduled workflows are more likely to be delayed.
-    - cron: '17 */2 * * *'
   workflow_dispatch:
-    inputs:
-      force_rebuild:
-        description: '即使上游未变化也重新构建基础版'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -102,7 +93,9 @@ jobs:
 
   build-base:
     needs: check-upstream
-    if: needs.check-upstream.outputs.changed == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_rebuild)
+    # This workflow is manual-only. A manual run always builds both variants,
+    # even when the resolved upstream fingerprint has not changed.
+    if: github.event_name == 'workflow_dispatch'
     name: 6.6.${{ needs.check-upstream.outputs.sub_level }}-android15-8 ${{ matrix.name }}
     strategy:
       fail-fast: false
